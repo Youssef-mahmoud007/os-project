@@ -114,7 +114,7 @@ class App(tk.Tk):
         btn_frame = tk.Frame(box, bg=BG)
         btn_frame.grid(row=5, column=0, columnspan=3, pady=8, sticky="w")
 
-        add=tk.Button(btn_frame, text="+ Add Process",
+        tk.Button(btn_frame, text="+ Add Process",
                   command=self._add_row,
                   bg=BLUE, fg=WHITE, font=FONT, relief="flat",
                   padx=8, pady=3).pack(side="left", padx=(0,4))
@@ -245,6 +245,15 @@ class App(tk.Tk):
             e_bur.destroy()
             del_btn.destroy()
         self.process_rows.clear()
+        self.gantt_rr.delete("all")
+        self.gantt_srtf.delete("all")
+        self.tree_rr.delete(*self.tree_rr.get_children())
+        self.tree_srtf.delete(*self.tree_srtf.get_children())
+        self.avg_rr.config(text="")
+        self.avg_srtf.config(text="")
+        self.rq_lbl.config(text="—")
+        self.cmp_lbl.config(text="Run the simulation to see the comparison.")
+        self.conc_lbl.config(text="—")
 
     
     # Load scenario
@@ -309,9 +318,8 @@ class App(tk.Tk):
                 slots.append([entry, t, t + 1])
             t += 1
 
-        unique = list(dict.fromkeys(s[0] for s in slots if s[0] != "Idle"))
-        color_map = {pid: GANTT_COLORS[i % len(GANTT_COLORS)]
-                     for i, pid in enumerate(unique)}
+        unique = sorted(list(dict.fromkeys(s[0] for s in slots if s[0] != "Idle")))
+        color_map = {pid: GANTT_COLORS[i % len(GANTT_COLORS)] for i, pid in enumerate(unique)}
         color_map["Idle"] = "#d1d5db"
 
         max_t  = slots[-1][2]
@@ -341,7 +349,8 @@ class App(tk.Tk):
                 else {p[2]: (p[1], p[0]) for p in proc_list})
 
         wts, tats, rts = [], [], []
-        for pid, (ct, tat, wt, rt) in completed.items():
+        for pid in sorted(completed.keys()):
+            ct, tat, wt, rt = completed[pid]
             arrival, burst = info[pid]
             tree.insert("", "end", values=(pid, arrival, burst, ct, tat, wt, rt))
             wts.append(wt); tats.append(tat); rts.append(rt)

@@ -1,3 +1,4 @@
+
 import copy
 
 #srtf
@@ -5,7 +6,7 @@ def srtf_preemptive(process_list):
 
     process_list = copy.deepcopy(process_list)
 
-  
+    
     original_burst = {}
     for p in process_list:
         original_burst[p[2]] = p[0]
@@ -56,9 +57,8 @@ def srtf_preemptive(process_list):
 #  Round Robin
 
 def round_robin(process_list, time_quanta):
-
     process_list = copy.deepcopy(process_list)
-    process_list.sort()                 
+    process_list.sort(key=lambda x: (x[0], x[2]))                 
 
     burst_times = {}
     for p in process_list:
@@ -68,30 +68,26 @@ def round_robin(process_list, time_quanta):
     gantt     = []
     rt_map    = {}
     t         = 0
+    ready_queue = [] 
 
-    while process_list:
-        available = []
-        for p in process_list:
-            if p[0] <= t:               
-                available.append(p)
-
-        if not available:
+    while process_list or ready_queue:
+        while process_list and process_list[0][0] <= t:
+            ready_queue.append(process_list.pop(0))
+        if not ready_queue:
             gantt.append("Idle")
             t += 1
             continue
-
-        process = available[0]          
+        process = ready_queue.pop(0)          
         pid     = process[2]
 
         if pid not in rt_map:
             rt_map[pid] = t - process[0]   
-
-        process_list.remove(process)
         rem_burst = process[1]
-
         if rem_burst <= time_quanta:
-            gantt.extend([pid] * rem_burst)
-            t += rem_burst
+            gantt.extend([pid] * rem_burst) 
+            t  += rem_burst
+            while process_list and process_list[0][0] <= t:
+                ready_queue.append(process_list.pop(0))
             ct  = t
             at  = process[0]
             bt  = burst_times[pid]
@@ -99,11 +95,12 @@ def round_robin(process_list, time_quanta):
             wt  = tt - bt
             completed[pid] = [ct, tt, wt, rt_map[pid]]
         else:
-
             gantt.extend([pid] * time_quanta)
             t += time_quanta
+            while process_list and process_list[0][0] <= t:
+                ready_queue.append(process_list.pop(0))
             process[1] -= time_quanta
-            process_list.append(process)
+            ready_queue.append(process)
 
     return completed, gantt
 
@@ -184,7 +181,7 @@ SCENARIOS = {
         "note": "Invalid quantum (-1) — click Run to see validation error.",
     },
     "F – Custom": {
-        "processes": [("P1","",""),("P2","",""),("P3","",""),("P4","","")],
+        "processes": [],
         "quantum": "",
         "note": "",
     },
